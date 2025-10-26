@@ -10,13 +10,26 @@ import {
   Badge,
   Grid,
   Stack,
+  Menu,
+  Avatar,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
-import { IconSword, IconShield, IconHeart } from "@tabler/icons-react";
+import {
+  IconSword,
+  IconShield,
+  IconHeart,
+  IconLogout,
+  IconSettings,
+  IconBell,
+} from "@tabler/icons-react";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import AuthContainer from "./components/AuthContainer";
+import NotificationSettings from "./components/NotificationSettings";
 
-function App() {
+const MainApp = () => {
   const [opened, { toggle }] = useDisclosure();
+  const { currentUser, logout } = useAuth();
 
   const showNotification = () => {
     notifications.show({
@@ -24,6 +37,14 @@ function App() {
       message: "Your monster taming adventure begins now! 🐾",
       color: "blue",
     });
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
   };
 
   return (
@@ -37,9 +58,42 @@ function App() {
       padding="md"
     >
       <AppShell.Header>
-        <Group h="100%" px="md">
-          <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
-          <Title order={3}>Glint Monster Taming MMO</Title>
+        <Group h="100%" px="md" justify="space-between">
+          <Group>
+            <Burger
+              opened={opened}
+              onClick={toggle}
+              hiddenFrom="sm"
+              size="sm"
+            />
+            <Title order={3}>Glint Monster Taming MMO</Title>
+          </Group>
+
+          <Group>
+            <Text size="sm">Welcome, {currentUser?.email}</Text>
+            <Menu shadow="md" width={200}>
+              <Menu.Target>
+                <Avatar size="sm" style={{ cursor: "pointer" }}>
+                  {currentUser?.email?.charAt(0).toUpperCase()}
+                </Avatar>
+              </Menu.Target>
+
+              <Menu.Dropdown>
+                <Menu.Label>Account</Menu.Label>
+                <Menu.Item leftSection={<IconSettings size={14} />}>
+                  Settings
+                </Menu.Item>
+                <Menu.Divider />
+                <Menu.Item
+                  leftSection={<IconLogout size={14} />}
+                  color="red"
+                  onClick={handleLogout}
+                >
+                  Logout
+                </Menu.Item>
+              </Menu.Dropdown>
+            </Menu>
+          </Group>
         </Group>
       </AppShell.Header>
 
@@ -54,6 +108,9 @@ function App() {
           </Button>
           <Button variant="light" leftSection={<IconHeart size={16} />}>
             Care Center
+          </Button>
+          <Button variant="light" leftSection={<IconBell size={16} />}>
+            Notifications
           </Button>
         </Stack>
       </AppShell.Navbar>
@@ -73,6 +130,9 @@ function App() {
                 Start Your Adventure
               </Button>
             </div>
+
+            {/* Notification Settings Card */}
+            <NotificationSettings />
 
             <Grid>
               <Grid.Col span={{ base: 12, md: 4 }}>
@@ -125,6 +185,24 @@ function App() {
       </AppShell.Main>
     </AppShell>
   );
+};
+
+function App() {
+  return (
+    <AuthProvider>
+      <AuthWrapper />
+    </AuthProvider>
+  );
 }
+
+const AuthWrapper = () => {
+  const { currentUser } = useAuth();
+
+  if (!currentUser) {
+    return <AuthContainer />;
+  }
+
+  return <MainApp />;
+};
 
 export default App;
